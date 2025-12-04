@@ -1,5 +1,9 @@
 // Simple MediaRecorder-based recorder and uploader
-const phonemes = ['AA', 'AE', 'AH', 'AO', 'EH', 'ER', 'IH', 'IY', 'OW', 'UH', 'S', 'T', 'K'];
+const phonemes = [
+  'AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'B', 'CH', 'D', 'DH', 'EH', 'ER', 'EY', 'F', 'G',
+  'HH', 'IH', 'IY', 'JH', 'K', 'L', 'M', 'N', 'NG', 'OW', 'OY', 'P', 'R', 'S', 'SH',
+  'T', 'TH', 'UH', 'UW', 'V', 'W', 'Y', 'Z', 'ZH'
+];
 let currentIndex = 0;
 let mediaRecorder;
 let chunks = [];

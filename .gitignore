@@ -20,3 +20,10 @@ Thumbs.db
 vocaloid.db
 /certs/
 nginx.conf
+.env
+/api/render_jobs/*
+/api/upload/*
+/api/request_render/*
+/api/signup/*
+/api/users/*
+

@@ -21,6 +21,39 @@ if (!@mkdir($jobdir, 0775, true)) {
     exit;
 }
 
+// Load .env
+$env = parse_ini_file(__DIR__ . '/../.env');
+$llm_url = $env['LLM_API_URL'] ?? '';
+$llm_model = $env['LLM_MODEL'] ?? 'phi4:latest';
+
+// Check if input is likely raw text (contains lowercase or no spaces)
+// Heuristic: if it has lowercase letters, it's probably text. ARPABET is usually all caps.
+if (preg_match('/[a-z]/', $text) && !empty($llm_url)) {
+    $prompt = "Convert the following text to space-separated CMU ARPABET phonemes. Output ONLY the phonemes. Text: " . $text;
+    $data = [
+        "model" => $llm_model,
+        "prompt" => $prompt,
+        "stream" => false
+    ];
+    
+    $ch = curl_init($llm_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    if ($response) {
+        $json = json_decode($response, true);
+        if (isset($json['response'])) {
+            // Use the LLM output as the text for the job
+            $text = trim($json['response']);
+        }
+    }
+}
+
 $job = ['id'=>$jobid, 'user'=>$user, 'text'=>$text, 'status'=>'queued', 'created_at'=>date('c')];
 $json = json_encode($job);
 if (file_put_contents($jobdir . '/job.json', $json) === false) {
