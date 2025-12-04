@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "schemaVersion": "1.0.0",
+  "name": "Vocaloid PoC",
+  "slug": "vocaloid-poc",
+  "summary": "A proof-of-concept voice synthesis system that allows users to record phonemes and render text using their own voice",
+  "version": "0.1.0",
+  "license": "MIT",
+  "status": "development",
+  "concept": "A web-based voice synthesis application where users can create a voice profile by recording phonemes, then use that voice to synthesize speech from text",
+  "tech_stack": {
+    "frontend": "HTML5, CSS (Bootstrap 5.3), JavaScript (ES6)",
+    "backend": "PHP 8.x",
+    "database": "SQLite",
+    "audio": "MediaRecorder API, Web Audio API"
+  },
+  "architecture": {
+    "overview": "Monolithic web application with PHP backend handling user authentication and API endpoints, JavaScript frontend providing UI and audio recording capabilities",
+    "components": {
+      "authentication": {
+        "description": "User signup and account management system",
+        "implementation": "PHP with SQLite database, password hashing with bcrypt",
+        "files": ["api/signup.php"],
+        "status": "implemented"
+      },
+      "audio_recorder": {
+        "description": "Client-side phoneme recording functionality using MediaRecorder API",
+        "implementation": "JavaScript MediaRecorder with audio preview",
+        "files": ["recorder.js"],
+        "status": "implemented"
+      },
+      "frontend_ui": {
+        "description": "Bootstrap-based responsive user interface",
+        "implementation": "HTML with Bootstrap 5.3 framework",
+        "files": ["index.php"],
+        "status": "implemented"
+      },
+      "render_engine": {
+        "description": "Text-to-speech synthesis using recorded phonemes",
+        "implementation": "PHP backend API endpoint",
+        "files": ["api/request_render.php"],
+        "status": "in_progress"
+      }
+    }
+  },
+  "current_capabilities": [
+    "User signup and account creation",
+    "Audio recording with MediaRecorder API",
+    "Phoneme recording workflow for 13 phonemes",
+    "Sample upload and storage",
+    "Text input interface for render requests"
+  ],
+  "primary_features": [
+    "User authentication and account management",
+    "Phoneme recording wizard",
+    "Voice sample storage per user",
+    "Text-to-speech render requests"
+  ],
+  "secondary_features": [
+    "Audio preview during recording",
+    "Bootstrap responsive UI",
+    "SQLite persistent storage"
+  ],
+  "files_of_interest": [
+    "index.php",
+    "recorder.js",
+    "api/signup.php",
+    "api/request_render.php",
+    "api/upload.php"
+  ],
+  "key_files": {
+    "entry_point": "index.php",
+    "client_logic": "recorder.js",
+    "user_auth": "api/signup.php",
+    "render_request": "api/request_render.php",
+    "sample_upload": "api/upload.php"
+  },
+  "api_endpoints": [
+    {
+      "endpoint": "/api/signup.php",
+      "method": "POST",
+      "description": "User registration endpoint",
+      "request_body": {
+        "username": "string",
+        "password": "string"
+      },
+      "response": {
+        "ok": "boolean or error string"
+      }
+    },
+    {
+      "endpoint": "/api/upload.php",
+      "method": "POST",
+      "description": "Upload phoneme audio sample"
+    },
+    {
+      "endpoint": "/api/request_render.php",
+      "method": "POST",
+      "description": "Request text-to-speech rendering with user's voice"
+    }
+  ],
+  "infrastructure": {
+    "type": "PHP web server",
+    "notes": "Requires PHP 8.x with SQLite3 support, runs on Apache/Nginx",
+    "files": ["index.php", "api/"]
+  },
+  "how_to_run_locally": {
+    "setup": "Ensure PHP 8.x and SQLite are installed",
+    "serve": "Use PHP built-in server: php -S localhost:8000 from project root",
+    "access": "Navigate to http://localhost:8000 in browser",
+    "dependencies": "No external dependencies required - uses native Web APIs and PDO for database"
+  },
+  "required_env": [],
+  "external_services": {},
+  "development_state": {
+    "scaffold": "Basic MVP structure complete with signup, recording, and render request interfaces",
+    "reviewed_examples": [],
+    "notes": "Audio processing and phoneme synthesis backend needs implementation"
+  },
+  "open_questions": [
+    "What audio processing library will be used for synthesis?",
+    "How will phoneme samples be processed and normalized?",
+    "What is the target quality/sample rate for recordings?",
+    "Will voice samples be stored on disk or in database?",
+    "How will render requests be queued and processed?"
+  ],
+  "next_steps": [
+    "Implement phoneme sample upload and storage in api/upload.php",
+    "Implement voice synthesis engine in api/request_render.php",
+    "Add authentication/login functionality",
+    "Implement audio processing pipeline for phoneme samples",
+    "Add error handling and validation throughout",
+    "Implement render result delivery mechanism"
+  ],
+  "current_goals": [
+    "Complete MVP with working voice synthesis",
+    "Support recording and playback of user voice samples",
+    "Enable text rendering with synthesized speech"
+  ],
+  "progress_percent": 35,
+  "progress_state": "Frontend MVP complete, backend synthesis pending",
+  "lastUpdated": "2025-12-04T00:00:00Z"
+}

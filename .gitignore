@@ -1,0 +1,22 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.bak
+*~
+
+# Compiled files and build artifacts
+*.log
+*.tmp
+*.temp
+/vendor/
+/node_modules/
+
+# Project-specific ignores
+vocaloid.db
+/certs/
+nginx.conf
