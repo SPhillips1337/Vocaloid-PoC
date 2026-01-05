@@ -9,12 +9,9 @@ $job = json_decode(file_get_contents($jobfile), true);
 $job['status'] = 'processing';
 file_put_contents($jobfile, json_encode($job));
 
-// In a real app, we'd use the user's phonemes and a TTS engine.
-// For now, we just copy a silent mp3 file.
 // Parse text as space-separated phonemes
 $phonemes = explode(' ', strtoupper(trim($job['text'])));
 $inputs = [];
-$filter = '';
 $count = 0;
 
 foreach($phonemes as $p){
@@ -25,14 +22,30 @@ foreach($phonemes as $p){
     $file = __DIR__ . '/users/' . $job['user'] . '/phonemes/' . $p . '.webm';
     if(file_exists($file)){
         $inputs[] = '-i ' . escapeshellarg($file);
-        $filter .= "[$count:a]";
         $count++;
     }
 }
 
 if($count > 0){
-    $filter .= "concat=n=$count:v=0:a=1[out]";
-    $cmd = "ffmpeg " . implode(' ', $inputs) . " -filter_complex " . escapeshellarg($filter) . " -map '[out]' -y " . escapeshellarg($jobdir . '/output.mp3');
+    if ($count === 1) {
+        $cmd = "ffmpeg " . implode(' ', $inputs) . " -y " . escapeshellarg($jobdir . '/output.mp3');
+    } else {
+        $filter_complex = "";
+        $prev_label = "0";
+
+        for ($i = 1; $i < $count; $i++) {
+            $next_label = "a" . $i;
+            $input1 = ($i == 1) ? "[0:a]" : "[$prev_label]";
+            $input2 = "[$i:a]";
+
+            // Use acrossfade with 0.05s duration to blend phonemes
+            $filter_complex .= "$input1$input2" . "acrossfade=d=0.05:c1=tri:c2=tri[$next_label];";
+            $prev_label = $next_label;
+        }
+
+        $filter_complex = rtrim($filter_complex, ";");
+        $cmd = "ffmpeg " . implode(' ', $inputs) . " -filter_complex " . escapeshellarg($filter_complex) . " -map '[$prev_label]' -y " . escapeshellarg($jobdir . '/output.mp3');
+    }
     shell_exec($cmd);
 } else {
     // Fallback if no valid phonemes found
