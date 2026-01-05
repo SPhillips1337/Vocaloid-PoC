@@ -73,7 +73,10 @@ async function saveSample() {
 
 async function requestRender() {
   const text = $('render-text').value;
-  const resp = await fetch('api/request_render.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, text }) });
+  // Get selected type from radio buttons
+  const type = document.querySelector('input[name="render-type"]:checked').value;
+
+  const resp = await fetch('api/request_render.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, text, type }) });
   if (resp.ok) {
     const j = await resp.json();
     $('render-result').innerHTML = `<p>Job created: ${j.job_id}</p><audio controls src="${j.url}"></audio>`;
