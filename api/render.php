@@ -27,16 +27,29 @@ foreach($phonemes as $p){
 }
 
 if($count > 0){
-    if ($count === 1) {
-        $cmd = "ffmpeg " . implode(' ', $inputs) . " -y " . escapeshellarg($jobdir . '/output.mp3');
+    // Common silence removal filter args
+    // remove start silence (start_periods=1) and end silence (stop_periods=1)
+    // threshold -40dB is a reasonable default for recorded speech
+    $silence_args = "start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=1:stop_duration=0:stop_threshold=-40dB";
+
+    if ($count == 1) {
+        // Just remove silence
+        $cmd = "ffmpeg " . implode(' ', $inputs) . " -af 'silenceremove=$silence_args' -y " . escapeshellarg($jobdir . '/output.mp3');
     } else {
         $filter_complex = "";
-        $prev_label = "0";
+        
+        // 1. Pre-process all inputs to remove silence
+        for($i=0; $i<$count; $i++){
+            $filter_complex .= "[$i:a]silenceremove=$silence_args" . "[c$i];";
+        }
+
+        // 2. Chain them with acrossfade
+        $prev_label = "c0";
 
         for ($i = 1; $i < $count; $i++) {
-            $next_label = "a" . $i;
-            $input1 = ($i == 1) ? "[0:a]" : "[$prev_label]";
-            $input2 = "[$i:a]";
+            $next_label = "m" . $i; // mixed label
+            $input1 = "[$prev_label]";
+            $input2 = "[c$i]";
 
             // Use acrossfade with 0.05s duration to blend phonemes
             $filter_complex .= "$input1$input2" . "acrossfade=d=0.05:c1=tri:c2=tri[$next_label];";
