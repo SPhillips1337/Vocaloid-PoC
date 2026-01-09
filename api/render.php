@@ -9,12 +9,9 @@ $job = json_decode(file_get_contents($jobfile), true);
 $job['status'] = 'processing';
 file_put_contents($jobfile, json_encode($job));
 
-// In a real app, we'd use the user's phonemes and a TTS engine.
-// For now, we just copy a silent mp3 file.
 // Parse text as space-separated phonemes
 $phonemes = explode(' ', strtoupper(trim($job['text'])));
 $inputs = [];
-$filter = '';
 $count = 0;
 
 foreach($phonemes as $p){
@@ -30,18 +27,37 @@ foreach($phonemes as $p){
 }
 
 if($count > 0){
+    // Common silence removal filter args
+    // remove start silence (start_periods=1) and end silence (stop_periods=1)
+    // threshold -40dB is a reasonable default for recorded speech
+    $silence_args = "start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=1:stop_duration=0:stop_threshold=-40dB";
+
     if ($count == 1) {
-        $cmd = "ffmpeg " . implode(' ', $inputs) . " -y " . escapeshellarg($jobdir . '/output.mp3');
+        // Just remove silence
+        $cmd = "ffmpeg " . implode(' ', $inputs) . " -af 'silenceremove=$silence_args' -y " . escapeshellarg($jobdir . '/output.mp3');
     } else {
-        $filter = "";
-        $prev = "[0:a]";
-        for ($i = 1; $i < $count; $i++) {
-            $next = ($i == $count - 1) ? "[out]" : "[tmp$i]";
-            $filter .= "{$prev}[{$i}:a]acrossfade=d=0.05:c1=tri:c2=tri{$next};";
-            $prev = $next;
+        $filter_complex = "";
+        
+        // 1. Pre-process all inputs to remove silence
+        for($i=0; $i<$count; $i++){
+            $filter_complex .= "[$i:a]silenceremove=$silence_args" . "[c$i];";
         }
-        $filter = rtrim($filter, ";");
-        $cmd = "ffmpeg " . implode(' ', $inputs) . " -filter_complex " . escapeshellarg($filter) . " -map '[out]' -y " . escapeshellarg($jobdir . '/output.mp3');
+
+        // 2. Chain them with acrossfade
+        $prev_label = "c0";
+
+        for ($i = 1; $i < $count; $i++) {
+            $next_label = "m" . $i; // mixed label
+            $input1 = "[$prev_label]";
+            $input2 = "[c$i]";
+
+            // Use acrossfade with 0.05s duration to blend phonemes
+            $filter_complex .= "$input1$input2" . "acrossfade=d=0.05:c1=tri:c2=tri[$next_label];";
+            $prev_label = $next_label;
+        }
+
+        $filter_complex = rtrim($filter_complex, ";");
+        $cmd = "ffmpeg " . implode(' ', $inputs) . " -filter_complex " . escapeshellarg($filter_complex) . " -map '[$prev_label]' -y " . escapeshellarg($jobdir . '/output.mp3');
     }
     shell_exec($cmd);
 } else {
