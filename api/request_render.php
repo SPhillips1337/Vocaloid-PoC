@@ -26,9 +26,21 @@ $env = parse_ini_file(__DIR__ . '/../.env');
 $llm_url = $env['LLM_API_URL'] ?? '';
 $llm_model = $env['LLM_MODEL'] ?? 'phi4:latest';
 
-// Check if input is likely raw text (contains lowercase or no spaces)
-// Heuristic: if it has lowercase letters, it's probably text. ARPABET is usually all caps.
-if (preg_match('/[a-z]/', $text) && !empty($llm_url)) {
+$type = $input['type'] ?? 'auto';
+$should_convert = false;
+
+if ($type === 'text') {
+    $should_convert = true;
+} elseif ($type === 'phonemes') {
+    $should_convert = false;
+} else {
+    // Legacy heuristic
+    if (preg_match('/[a-z]/', $text)) {
+        $should_convert = true;
+    }
+}
+
+if ($should_convert && !empty($llm_url)) {
     $prompt = "Convert the following text to space-separated CMU ARPABET phonemes. Output ONLY the phonemes. Text: " . $text;
     $data = [
         "model" => $llm_model,

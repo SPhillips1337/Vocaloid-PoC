@@ -40,7 +40,18 @@
 
   <div id="render" style="display:none;" class="mt-4">
     <h4>Render text</h4>
-    <textarea id="render-text" class="form-control" rows="3" placeholder="Enter sentence"></textarea>
+    <div class="mb-2">
+      <label class="form-label">Input Type</label>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="render-type" id="type-text" value="text" checked>
+        <label class="form-check-label" for="type-text">Raw Text (auto-convert)</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="render-type" id="type-phonemes" value="phonemes">
+        <label class="form-check-label" for="type-phonemes">Phonemes (ARPABET)</label>
+      </div>
+    </div>
+    <textarea id="render-text" class="form-control" rows="3" placeholder="Enter sentence or phonemes"></textarea>
     <div class="mt-2">
       <button class="btn btn-primary" id="request-render">Request Render</button>
     </div>
