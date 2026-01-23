@@ -72,16 +72,50 @@ async function saveSample() {
 }
 
 async function requestRender() {
+  const btn = $('request-render');
+  const resultDiv = $('render-result');
   const text = $('render-text').value;
-  // Get selected type from radio buttons
   const type = document.querySelector('input[name="render-type"]:checked').value;
 
-  const resp = await fetch('api/request_render.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, text, type }) });
-  if (resp.ok) {
-    const j = await resp.json();
-    $('render-result').innerHTML = `<p>Job created: ${j.job_id}</p><audio controls src="${j.url}"></audio>`;
-  } else {
-    alert('Render request failed');
+  if (!text.trim()) {
+    alert('Please enter some text or phonemes');
+    return;
+  }
+
+  btn.disabled = true;
+  resultDiv.innerHTML = '<p class="text-muted">Processing render request...</p>';
+
+  try {
+    const resp = await fetch('api/request_render.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, text, type })
+    });
+
+    if (resp.ok) {
+      const j = await resp.json();
+      if (j.error) {
+        resultDiv.innerHTML = `<p class="text-danger">Error: ${j.message || j.error}</p>`;
+      } else {
+        resultDiv.innerHTML = `
+          <p class="text-success">Job created: ${j.job_id}</p>
+          <audio id="render-audio" controls style="width: 100%;"></audio>
+        `;
+        const audio = $('render-audio');
+        // Setting src separately can sometimes help with abort issues
+        // and provides a cleaner hook for events if needed later
+        audio.src = j.url;
+      }
+    } else {
+      const errText = await resp.text();
+      resultDiv.innerHTML = `<p class="text-danger">Render request failed (Server Error)</p>`;
+      console.error('Render failure:', errText);
+    }
+  } catch (e) {
+    resultDiv.innerHTML = `<p class="text-danger">Render request failed: ${e.message}</p>`;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
   }
 }
 

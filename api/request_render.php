@@ -1,6 +1,7 @@
 <?php
 // Create a render job under workspace/render_jobs/<uuid>/job.json
 ini_set('display_errors', 0);
+ini_set('max_execution_time', 90);
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -65,21 +66,32 @@ if ($should_convert && !empty($llm_url)) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15); // 15s timeout
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Increased timeout to 60s
     
     $response = curl_exec($ch);
-    if(curl_errno($ch)){
-        debug_log("CURL Error: " . curl_error($ch));
-    }
+    $curl_error = curl_errno($ch) ? curl_error($ch) : null;
     curl_close($ch);
+    
+    if ($curl_error) {
+        debug_log("CURL Error: " . $curl_error);
+        echo json_encode(['error' => 'llm_connection_failed', 'message' => 'Phoneme conversion service timed out. Please try again.']);
+        exit;
+    }
     
     if ($response) {
         debug_log("LLM Response received");
         $json = json_decode($response, true);
-        if (isset($json['response'])) {
-            // Use the LLM output as the text for the job
+        if (isset($json['response']) && !empty(trim($json['response']))) {
             $text = trim($json['response']);
+        } else {
+            debug_log("LLM Response invalid or empty");
+            echo json_encode(['error' => 'llm_invalid_response', 'message' => 'Phoneme conversion failed to return valid data.']);
+            exit;
         }
+    } else {
+        debug_log("LLM Request returned no response");
+        echo json_encode(['error' => 'llm_empty_response', 'message' => 'Phoneme conversion service returned no response.']);
+        exit;
     }
 }
 
